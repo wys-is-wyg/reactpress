@@ -1,0 +1,111 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User model
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  name          String?
+  password      String
+  role          Role      @default(USER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  posts         Post[]
+  pages         Page[]
+}
+
+// Role enum
+enum Role {
+  USER
+  AUTHOR
+  EDITOR
+  ADMIN
+}
+
+// Post model
+model Post {
+  id            String    @id @default(uuid())
+  title         String
+  slug          String    @unique
+  content       String?
+  excerpt       String?
+  status        Status    @default(DRAFT)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  publishedAt   DateTime?
+  authorId      String
+  author        User      @relation(fields: [authorId], references: [id])
+  categories    CategoryOnPost[]
+  tags          TagOnPost[]
+}
+
+// Page model
+model Page {
+  id            String    @id @default(uuid())
+  title         String
+  slug          String    @unique
+  content       String?
+  status        Status    @default(DRAFT)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  publishedAt   DateTime?
+  authorId      String
+  author        User      @relation(fields: [authorId], references: [id])
+}
+
+// Status enum
+enum Status {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+// Category model
+model Category {
+  id            String    @id @default(uuid())
+  name          String
+  slug          String    @unique
+  description   String?
+  posts         CategoryOnPost[]
+}
+
+// Tag model
+model Tag {
+  id            String    @id @default(uuid())
+  name          String
+  slug          String    @unique
+  posts         TagOnPost[]
+}
+
+// Many-to-many relationship between Post and Category
+model CategoryOnPost {
+  postId       String
+  categoryId   String
+  post         Post      @relation(fields: [postId], references: [id])
+  category     Category  @relation(fields: [categoryId], references: [id])
+
+  @@id([postId, categoryId])
+}
+
+// Many-to-many relationship between Post and Tag
+model TagOnPost {
+  postId       String
+  tagId        String
+  post         Post      @relation(fields: [postId], references: [id])
+  tag          Tag       @relation(fields: [tagId], references: [id])
+
+  @@id([postId, tagId])
+}
